@@ -179,7 +179,7 @@ void OptionsDialog::LoadProfileInfo() {
         return;
     }
 
-    AimpHTTP::Get(L"https://api.soundcloud.com/me/?oauth_token=" + m_plugin->getAccessToken(), [this](unsigned char *data, int size) {
+    AimpHTTP::Get(L"https://api.soundcloud.com/me" L"\u000D\u000A" L"Authorization: OAuth " + m_plugin->getAccessToken(), [this](unsigned char* data, int size) {
         rapidjson::Document d;
         d.Parse(reinterpret_cast<const char *>(data));
 
@@ -339,6 +339,12 @@ LRESULT CALLBACK OptionsDialog::ButtonProc(HWND hWnd, UINT uMsg, WPARAM wParam, 
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             Gdiplus::Graphics g(hdc);
+            if (dialog->m_plugin->isConnected()) { // Intentional assignment(=) here
+                currentBtn = &disconnect;
+            }
+            else {
+                currentBtn = &connect;
+            }
 
             LinearGradientBrush linGrBrush(Point(0, 0), Point(0, r.Height), currentBtn->Gradient[mouseOver ? 1 : 0], currentBtn->Gradient[mouseOver ? 0 : 1]);
             g.FillPath(&linGrBrush, &borderPath);

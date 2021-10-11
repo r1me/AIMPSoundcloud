@@ -166,7 +166,7 @@ void SoundCloudAPI::LoadFromUrl(std::wstring url, IAIMPPlaylist *playlist, std::
     }
     url += L"client_id=" TEXT(STREAM_CLIENT_ID);
     if (Plugin::instance()->isConnected())
-        url += L"&oauth_token=" + Plugin::instance()->getAccessToken();
+        url += "\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 
     AimpHTTP::Get(url, [playlist, state, finishCallback](unsigned char *data, int size) {
         rapidjson::Document d;
@@ -284,10 +284,11 @@ void SoundCloudAPI::ResolveUrl(const std::wstring &url, const std::wstring &play
             finalUrl = L"https://api.soundcloud.com/search/sounds?q=*&filter.genre_or_tag=" + tag + L"&limit=200";
         }
     }
+    finalUrl += L"&client_id=" TEXT(STREAM_CLIENT_ID);
     if (Plugin::instance()->isConnected())
-        finalUrl += L"&oauth_token=" + Plugin::instance()->getAccessToken();
+        finalUrl += L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 
-    AimpHTTP::Get(finalUrl + L"&client_id=" TEXT(STREAM_CLIENT_ID), [createPlaylist, url, playlistTitle, refName2](unsigned char *data, int size) {
+    AimpHTTP::Get(finalUrl, [createPlaylist, url, playlistTitle, refName2](unsigned char *data, int size) {
         rapidjson::Document d;
         d.Parse(reinterpret_cast<const char *>(data));
 
@@ -440,15 +441,14 @@ void SoundCloudAPI::LoadMyTracksAndPlaylists() {
         Config::SaveExtendedConfig();
     };
 
-    AimpHTTP::Get(L"https://api.soundcloud.com/me/tracks?oauth_token=" + Plugin::instance()->getAccessToken(), processResponse);
-    AimpHTTP::Get(L"https://api.soundcloud.com/me/playlists?oauth_token=" + Plugin::instance()->getAccessToken(), processResponse);
+    AimpHTTP::Get(L"https://api.soundcloud.com/me/tracks" L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken(), processResponse);
+    AimpHTTP::Get(L"https://api.soundcloud.com/me/playlists" L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken(), processResponse);
 }
 
 void SoundCloudAPI::LikeSong(int64_t trackId) {
     std::wstring url(L"https://api.soundcloud.com/me/favorites/");
     url += std::to_wstring(trackId);
-    url += L"?client_id=" TEXT(CLIENT_ID)
-           L"&oauth_token=" + Plugin::instance()->getAccessToken();
+    url += L"?client_id=" TEXT(CLIENT_ID) L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 
     AimpHTTP::Put(url);
     Config::Likes.insert(trackId);
@@ -458,7 +458,7 @@ void SoundCloudAPI::UnlikeSong(int64_t trackId) {
     std::wstring url(L"https://api.soundcloud.com/me/favorites/");
     url += std::to_wstring(trackId);
     url += L"?client_id=" TEXT(CLIENT_ID)
-           L"&oauth_token=" + Plugin::instance()->getAccessToken();
+           L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 
     AimpHTTP::Delete(url);
     Config::Likes.erase(trackId);
@@ -482,7 +482,7 @@ void SoundCloudAPI::RepostSong(int64_t trackId) {
     std::wstring url(L"https://api.soundcloud.com/e1/me/track_reposts/");
     url += std::to_wstring(trackId);
     url += L"?client_id=" TEXT(CLIENT_ID)
-           L"&oauth_token=" + Plugin::instance()->getAccessToken();
+           L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 
     AimpHTTP::Put(url);
 }

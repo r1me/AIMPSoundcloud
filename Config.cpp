@@ -214,7 +214,7 @@ bool Config::ResolveTrackInfo(int64_t id) {
     url += L"/?client_id=" TEXT(STREAM_CLIENT_ID);
 
     if (Plugin::instance()->isConnected())
-        url += L"&oauth_token=" + Plugin::instance()->getAccessToken();
+        url += L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 
     bool result = false;
     std::wstring title(L"Unknown"), permalink, waveform_id, artwork;
