@@ -5,6 +5,7 @@
 #include <cinttypes>
 #include "IUnknownInterfaceImpl.h"
 #include "SDK/apiOptions.h"
+#include <string>
 
 class Plugin;
 

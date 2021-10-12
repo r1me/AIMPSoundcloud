@@ -1,4 +1,5 @@
 #include "PlayerHook.h"
+#include "AIMPSoundcloud.h"
 #include <string>
 #include "Tools.h"
 #include "Config.h"
@@ -14,7 +15,8 @@ HRESULT WINAPI PlayerHook::OnCheckURL(IAIMPString *URL, BOOL *Handled) {
         stream_url = ti->Stream;
     }
 
-    stream_url += L"?client_id=" TEXT(STREAM_CLIENT_ID);
+    stream_url += L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
+
     URL->SetData(const_cast<wchar_t *>(stream_url.c_str()), stream_url.size());
 
     *Handled = 1;

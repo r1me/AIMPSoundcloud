@@ -159,14 +159,14 @@ void SoundCloudAPI::LoadFromUrl(std::wstring url, IAIMPPlaylist *playlist, std::
     if (!playlist || !state)
         return;
 
-    if (url.find(L'?') == std::wstring::npos) {
+/*    if (url.find(L'?') == std::wstring::npos) {
         url += L'?';
     } else {
         url += L'&';
     }
-    url += L"client_id=" TEXT(STREAM_CLIENT_ID);
+    url += L"client_id=" TEXT(STREAM_CLIENT_ID);*/
     if (Plugin::instance()->isConnected())
-        url += "\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
+        url += L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 
     AimpHTTP::Get(url, [playlist, state, finishCallback](unsigned char *data, int size) {
         rapidjson::Document d;
@@ -448,7 +448,8 @@ void SoundCloudAPI::LoadMyTracksAndPlaylists() {
 void SoundCloudAPI::LikeSong(int64_t trackId) {
     std::wstring url(L"https://api.soundcloud.com/me/favorites/");
     url += std::to_wstring(trackId);
-    url += L"?client_id=" TEXT(CLIENT_ID) L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
+    url += L"?client_id=" TEXT(CLIENT_ID)
+           L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 
     AimpHTTP::Put(url);
     Config::Likes.insert(trackId);

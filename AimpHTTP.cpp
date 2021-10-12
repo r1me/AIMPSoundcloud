@@ -1,6 +1,7 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <Windows.h>
+#include <string>
 
 #include "AimpHTTP.h"
 #include "AIMPSoundcloud.h"
@@ -130,6 +131,36 @@ bool AimpHTTP::Post(const std::wstring &url, const std::string &body, CallbackFu
     return false;
 }
 
+bool AimpHTTP::Put(const std::wstring& url, CallbackFunc callback) {
+    return false;
+
+    /*
+    if (!AimpHTTP::m_initialized || !Plugin::instance()->core())
+        return false;
+
+    EventListener* listener = new EventListener(callback);
+    Plugin::instance()->core()->CreateObject(IID_IAIMPMemoryStream, reinterpret_cast<void**>(&(listener->m_stream)));
+
+    return SUCCEEDED(m_httpClient2->Post(AIMPString(url), AIMP_SERVICE_HTTPCLIENT_METHOD_PUT,
+        0, listener->m_stream, NULL, listener, 0, reinterpret_cast<void**>(&(listener->m_taskId))));
+    */
+}
+
+bool AimpHTTP::Delete(const std::wstring& url, CallbackFunc callback) {
+    return false;
+
+    /*
+    if (!AimpHTTP::m_initialized || !Plugin::instance()->core())
+        return false;
+
+    EventListener* listener = new EventListener(callback);
+    Plugin::instance()->core()->CreateObject(IID_IAIMPMemoryStream, reinterpret_cast<void**>(&(listener->m_stream)));
+
+    return SUCCEEDED(m_httpClient2->Post(AIMPString(url), AIMP_SERVICE_HTTPCLIENT_METHOD_DELETE,
+        0, listener->m_stream, NULL, listener, 0, reinterpret_cast<void**>(&(listener->m_taskId))));
+    */
+}
+
 bool AimpHTTP::Init(IAIMPCore *Core) {
     m_initialized = SUCCEEDED(Core->QueryInterface(IID_IAIMPServiceHTTPClient, reinterpret_cast<void **>(&m_httpClient)));
 
@@ -147,105 +178,4 @@ void AimpHTTP::Deinit() {
         m_httpClient->Release();
         m_httpClient = nullptr;
     }
-}
-
-bool AimpHTTP::Put(const std::wstring &url, CallbackFunc callback) {
-    return RawRequest("PUT", url, callback);
-}
-
-bool AimpHTTP::Delete(const std::wstring &url, CallbackFunc callback) {
-    return RawRequest("DELETE", url, callback);
-}
-
-void AimpHTTP::RawRequestThread(void *args) {
-    ThreadParams *params = static_cast<ThreadParams *>(args);
-    std::string request = params->request;
-    std::string host = params->host;
-    AimpHTTP::CallbackFunc callback = params->callback;
-    delete params;
-
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        DebugA("WSAStartup failed.\n");
-        return;
-    }
-
-    struct addrinfo hints;
-    ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_socktype = SOCK_STREAM;
-
-    struct addrinfo *targetAdressInfo = NULL;
-    DWORD getAddrRes = getaddrinfo(host.c_str(), NULL, &hints, &targetAdressInfo);
-    if (getAddrRes != 0 || targetAdressInfo == NULL) {
-        DebugA("Could not resolve the Host Name\n");
-        WSACleanup();
-        return;
-    }
-
-    SOCKADDR_IN sockAddr;
-    sockAddr.sin_addr = ((struct sockaddr_in *)targetAdressInfo->ai_addr)->sin_addr;
-    sockAddr.sin_family = AF_INET;
-    sockAddr.sin_port = htons(80);
-    freeaddrinfo(targetAdressInfo);
-
-    SOCKET webSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (webSocket == INVALID_SOCKET) {
-        DebugA("Creation of the Socket Failed\n");
-        WSACleanup();
-        return;
-    }
-
-    if (connect(webSocket, (SOCKADDR *)&sockAddr, sizeof(sockAddr)) != 0) {
-        DebugA("Could not connect\n");
-        closesocket(webSocket);
-        WSACleanup();
-        return;
-    }
-
-    const char *httpRequest = request.c_str();
-    int sentBytes = send(webSocket, httpRequest, strlen(httpRequest), 0);
-    if (sentBytes < (int)request.size() || sentBytes == SOCKET_ERROR) {
-        DebugA("Could not send the request to the Server");
-        closesocket(webSocket);
-        WSACleanup();
-        return;
-    }
-
-    char buffer[10240];
-    ZeroMemory(buffer, sizeof(buffer));
-    int dataLen;
-    if ((dataLen = recv(webSocket, buffer, sizeof(buffer), 0)) > 0) {
-        if (char *body = strstr(buffer, "\r\n\r\n")) {
-            body += 4;
-            if (callback && m_initialized && Plugin::instance()->core())
-                callback(reinterpret_cast<unsigned char *>(body), strlen(body));
-        }
-    }
-
-    closesocket(webSocket);
-    WSACleanup();
-};
-
-bool AimpHTTP::RawRequest(const std::string &method, const std::wstring &url, CallbackFunc callback) {
-    // Not perfect but does its job
-
-    std::string narrow_url = Tools::ToString(url);
-    const char *urlc = narrow_url.c_str();
-    if (urlc = strstr(urlc, "://")) {
-        urlc += 3;
-        if (const char *request = strstr(urlc, "/")) {
-            ThreadParams *p = new ThreadParams();
-            p->request += method + " ";
-            p->request += request;
-            p->host = std::string(urlc, request);
-            p->request += " HTTP/1.1\r\nHost: " + p->host + "\r\nConnection: close\r\n\r\n";
-            p->callback = callback;
-
-            HANDLE hThread = (HANDLE)_beginthread(AimpHTTP::RawRequestThread, 0, p);
-            return hThread != INVALID_HANDLE_VALUE;
-        }
-    }
-    return false;
 }

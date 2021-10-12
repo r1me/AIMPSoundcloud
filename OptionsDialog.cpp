@@ -339,7 +339,7 @@ LRESULT CALLBACK OptionsDialog::ButtonProc(HWND hWnd, UINT uMsg, WPARAM wParam, 
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             Gdiplus::Graphics g(hdc);
-            if (dialog->m_plugin->isConnected()) { // Intentional assignment(=) here
+            if (dialog->m_plugin->isConnected()) {
                 currentBtn = &disconnect;
             }
             else {

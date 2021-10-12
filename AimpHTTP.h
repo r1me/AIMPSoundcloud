@@ -66,8 +66,6 @@ private:
         std::string host;
         CallbackFunc callback;
     };
-    static void RawRequestThread(void *args);
-    static bool RawRequest(const std::string &method, const std::wstring &, CallbackFunc callback);
 
     AimpHTTP();
     AimpHTTP(const AimpHTTP&);
