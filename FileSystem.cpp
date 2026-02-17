@@ -98,7 +98,7 @@ HRESULT WINAPI FileSystem::CreateStream(IAIMPString *FileName, IAIMPStream **Str
         EventListener *listener = new EventListener();
         *Stream = listener->m_stream;
 
-        std::wstring url = ti->Stream + L"?client_id=" TEXT(STREAM_CLIENT_ID);
+        std::wstring url = ti->Stream + L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 
         uintptr_t *taskId = nullptr;
         ret = m_httpClient->Get(AIMPString(url), 0, *Stream, listener, nullptr, reinterpret_cast<void **>(&taskId));

@@ -159,12 +159,6 @@ void SoundCloudAPI::LoadFromUrl(std::wstring url, IAIMPPlaylist *playlist, std::
     if (!playlist || !state)
         return;
 
-/*    if (url.find(L'?') == std::wstring::npos) {
-        url += L'?';
-    } else {
-        url += L'&';
-    }
-    url += L"client_id=" TEXT(STREAM_CLIENT_ID);*/
     if (Plugin::instance()->isConnected())
         url += L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 
@@ -284,7 +278,7 @@ void SoundCloudAPI::ResolveUrl(const std::wstring &url, const std::wstring &play
             finalUrl = L"https://api.soundcloud.com/search/sounds?q=*&filter.genre_or_tag=" + tag + L"&limit=200";
         }
     }
-    finalUrl += L"&client_id=" TEXT(STREAM_CLIENT_ID);
+
     if (Plugin::instance()->isConnected())
         finalUrl += L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 

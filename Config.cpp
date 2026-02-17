@@ -210,13 +210,19 @@ void Config::LoadCache() {
 
 bool Config::ResolveTrackInfo(int64_t id) {
     std::wstring url(L"https://api.soundcloud.com/tracks/");
-    url += std::to_wstring(id);
-    url += L"/?client_id=" TEXT(STREAM_CLIENT_ID);
+    std::wstring url_streams(L"https://api.soundcloud.com/tracks/");
 
-    if (Plugin::instance()->isConnected())
+    url += std::to_wstring(id);
+    url_streams += std::to_wstring(id);
+    url_streams += L"/streams";
+    
+    if (Plugin::instance()->isConnected()) {
         url += L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
+        url_streams += L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
+    }
 
     bool result = false;
+    std::wstring access;
     std::wstring title(L"Unknown"), permalink, waveform_id, artwork;
     double duration = -1;
     std::wstring stream_url(L"https://api.soundcloud.com/tracks/" + std::to_wstring(id) + L"/stream");
@@ -228,8 +234,8 @@ bool Config::ResolveTrackInfo(int64_t id) {
         if (d.IsObject() && d.HasMember("id")) {
             int64_t trackId = d["id"].GetInt64();
             
-            if (d.HasMember("stream_url"))
-                stream_url = Tools::ToWString(d["stream_url"]);
+            if (d.HasMember("access"))
+                access = Tools::ToWString(d["access"]);
 
             waveform_id = Tools::ToWString(d["waveform_url"]);
             if (!waveform_id.empty()) {
@@ -247,11 +253,23 @@ bool Config::ResolveTrackInfo(int64_t id) {
             duration = d["duration"].GetInt64() / 1000.0;
             result = true;
         }
-
-        Config::TrackInfos[id] = Config::TrackInfo(id, title, stream_url, permalink, waveform_id, artwork, duration);
-
-        Config::SaveCache();
     }, true);
+
+    if (access == L"playable") {
+
+        AimpHTTP::Get(url_streams, [&](unsigned char* data, int size) {
+            rapidjson::Document d;
+            d.Parse(reinterpret_cast<const char*>(data));
+
+            if (d.IsObject() && d.HasMember("http_mp3_128_url"))
+                stream_url = Tools::ToWString(d["http_mp3_128_url"]);
+
+            Config::TrackInfos[id] = Config::TrackInfo(id, title, stream_url, permalink, waveform_id, artwork, duration);
+
+            Config::SaveCache();
+            }, true);
+
+    }
 
     return result;
 }
