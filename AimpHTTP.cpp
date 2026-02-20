@@ -12,6 +12,8 @@
 
 bool AimpHTTP::m_initialized = false;
 IAIMPServiceHTTPClient *AimpHTTP::m_httpClient = nullptr;
+IAIMPServiceHTTPClient2 *AimpHTTP::m_httpClient2 = nullptr;
+
 std::set<AimpHTTP::EventListener *> AimpHTTP::m_handlers;
 
 AimpHTTP::EventListener::EventListener(CallbackFunc callback, bool isFile) : m_isFileStream(isFile), m_callback(callback) {
@@ -132,37 +134,28 @@ bool AimpHTTP::Post(const std::wstring &url, const std::string &body, CallbackFu
 }
 
 bool AimpHTTP::Put(const std::wstring& url, CallbackFunc callback) {
-    return false;
-
-    /*
     if (!AimpHTTP::m_initialized || !Plugin::instance()->core())
         return false;
 
     EventListener* listener = new EventListener(callback);
     Plugin::instance()->core()->CreateObject(IID_IAIMPMemoryStream, reinterpret_cast<void**>(&(listener->m_stream)));
 
-    return SUCCEEDED(m_httpClient2->Post(AIMPString(url), AIMP_SERVICE_HTTPCLIENT_METHOD_PUT,
-        0, listener->m_stream, NULL, listener, 0, reinterpret_cast<void**>(&(listener->m_taskId))));
-    */
+    return SUCCEEDED(m_httpClient2->Post(AIMPString(url), AIMP_SERVICE_HTTPCLIENT_METHOD_PUT, 0, listener->m_stream, NULL, listener, 0, reinterpret_cast<void**>(&(listener->m_taskId))));
 }
 
 bool AimpHTTP::Delete(const std::wstring& url, CallbackFunc callback) {
-    return false;
-
-    /*
     if (!AimpHTTP::m_initialized || !Plugin::instance()->core())
         return false;
 
     EventListener* listener = new EventListener(callback);
     Plugin::instance()->core()->CreateObject(IID_IAIMPMemoryStream, reinterpret_cast<void**>(&(listener->m_stream)));
 
-    return SUCCEEDED(m_httpClient2->Post(AIMPString(url), AIMP_SERVICE_HTTPCLIENT_METHOD_DELETE,
-        0, listener->m_stream, NULL, listener, 0, reinterpret_cast<void**>(&(listener->m_taskId))));
-    */
+    return SUCCEEDED(m_httpClient2->Post(AIMPString(url), AIMP_SERVICE_HTTPCLIENT_METHOD_DELETE, 0, listener->m_stream, NULL, listener, 0, reinterpret_cast<void**>(&(listener->m_taskId))));
 }
 
 bool AimpHTTP::Init(IAIMPCore *Core) {
     m_initialized = SUCCEEDED(Core->QueryInterface(IID_IAIMPServiceHTTPClient, reinterpret_cast<void **>(&m_httpClient)));
+    Core->QueryInterface(IID_IAIMPServiceHTTPClient2, reinterpret_cast<void**>(&m_httpClient2));
 
     return m_initialized;
 }
@@ -173,9 +166,15 @@ void AimpHTTP::Deinit() {
     std::unordered_set<uintptr_t *> ids;
     for (auto x : m_handlers) ids.insert(x->m_taskId);
     for (auto x : ids) m_httpClient->Cancel(x, AIMP_SERVICE_HTTPCLIENT_FLAGS_WAITFOR);
+    for (auto x : ids) m_httpClient2->Cancel(x, AIMP_SERVICE_HTTPCLIENT_FLAGS_WAITFOR);
 
     if (m_httpClient) {
         m_httpClient->Release();
         m_httpClient = nullptr;
+    }
+
+    if (m_httpClient2) {
+        m_httpClient2->Release();
+        m_httpClient2 = nullptr;
     }
 }

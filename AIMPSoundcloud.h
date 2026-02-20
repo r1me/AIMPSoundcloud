@@ -80,7 +80,15 @@ public:
     inline std::wstring getAccessToken() const { return m_accessToken; }
     inline void setAccessToken(const std::wstring &accessToken) { m_accessToken = accessToken; }
 
-    inline bool isConnected() const { return !m_accessToken.empty(); }
+    inline std::wstring getRefreshToken() const { return m_refreshToken; }
+    inline void setRefreshToken(const std::wstring &refreshToken) { m_refreshToken = refreshToken; }
+
+    inline int64_t getTokenExpiresIn() const { return m_tokenExpiresIn; }
+    inline void setTokenExpiresIn(const int64_t& tokenExpiresIn) { m_tokenExpiresIn = tokenExpiresIn; }
+
+    void setTokenExpiresInDuration(const int64_t &tokenExpiresInDuration);     
+
+    bool isConnected();
 
     inline IAIMPCore *core() const { return m_core; }
 
@@ -109,5 +117,7 @@ private:
 
     ULONG_PTR m_gdiplusToken;
     std::wstring m_accessToken;
+    std::wstring m_refreshToken;
+    int64_t m_tokenExpiresIn;
     IAIMPCore *m_core;
 };

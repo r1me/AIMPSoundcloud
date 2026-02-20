@@ -14,6 +14,9 @@
 #include "ArtworkProvider.h"
 #include "PlayerHook.h"
 #include <set>
+#include <chrono>
+#include <codecvt>
+#include <locale>
 
 HRESULT __declspec(dllexport) WINAPI AIMPPluginGetHeader(IAIMPPlugin **Header) {
     *Header = Plugin::instance();
@@ -42,6 +45,8 @@ HRESULT WINAPI Plugin::Initialize(IAIMPCore *Core) {
     Config::LoadExtendedConfig();
 
     m_accessToken = Config::GetString(L"AccessToken");
+    m_refreshToken = Config::GetString(L"RefreshToken");
+    m_tokenExpiresIn = Config::GetInt64(L"TokenExpiresIn");
 
     if (AimpMenu *addMenu = AimpMenu::Get(AIMP_MENUID_PLAYER_PLAYLIST_ADDING)) {
         addMenu->Add(Lang(L"SoundCloud.Menu\\AddURL"), [this](IAIMPMenuItem *) { AddURLDialog::Show(); }, IDB_ICON)->Release();
@@ -253,6 +258,61 @@ void Plugin::KillMonitorTimer() {
         Timer::Cancel(m_monitorTimer);
         m_monitorTimer = 0;
     }
+}
+
+void Plugin::setTokenExpiresInDuration(const int64_t& tokenExpiresInDuration)
+{
+    auto currentDateTime = std::chrono::system_clock::now().time_since_epoch();
+    int64_t currentDateTimeSeconds = std::chrono::duration_cast<std::chrono::seconds>(currentDateTime).count();
+
+    m_tokenExpiresIn = currentDateTimeSeconds + tokenExpiresInDuration;
+}
+
+bool Plugin::isConnected()
+{
+    bool result = false;
+
+    if (m_accessToken.empty())
+        return false;
+
+    auto currentDateTime = std::chrono::system_clock::now().time_since_epoch();
+    int64_t currentDateTimeSeconds = std::chrono::duration_cast<std::chrono::seconds>(currentDateTime).count();
+
+    if (currentDateTimeSeconds >= m_tokenExpiresIn) {
+        std::string postData = "client_id=" CLIENT_ID "&client_secret=" CLIENT_SECRET "&grant_type=refresh_token&refresh_token=";
+        std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+        std::string refreshToken = converter.to_bytes(m_refreshToken);
+        postData += refreshToken;
+
+        AimpHTTP::Post(L"https://api.soundcloud.com/oauth2/token", postData, [this](unsigned char* data, int size) {
+            rapidjson::Document d;
+            d.Parse(reinterpret_cast<const char*>(data));
+
+            // if already valid token API returns empty JSON, check again in 10 minutes
+            if (!d.IsObject()) {
+                Plugin::instance()->setTokenExpiresInDuration(10 * 60);
+                Config::SetInt64(L"TokenExpiresIn", Plugin::instance()->getTokenExpiresIn());
+
+                return true;
+            }
+
+            if ((d.HasMember("access_token")) && (d.HasMember("refresh_token"))) {
+                Plugin::instance()->setAccessToken(Tools::ToWString(d["access_token"].GetString()));
+                Plugin::instance()->setRefreshToken(Tools::ToWString(d["refresh_token"].GetString()));
+                Plugin::instance()->setTokenExpiresInDuration(d["expires_in"].GetInt64());
+
+                Config::SetString(L"AccessToken", Plugin::instance()->getAccessToken());
+                Config::SetString(L"RefreshToken", Plugin::instance()->getRefreshToken());
+                Config::SetInt64(L"TokenExpiresIn", Plugin::instance()->getTokenExpiresIn());
+
+                return true;
+            }            
+        }, true);
+    } else {
+        result = true;
+    }
+
+    return result;
 }
 
 void Plugin::MonitorCallback() {
@@ -512,7 +572,7 @@ void Plugin::ForEveryItem(IAIMPPlaylist *pl, std::function<int(IAIMPPlaylistItem
                     int result = callback(item, finfo, id);
                     if (result & FLAG_DELETE_ITEM) {
                         pl->Delete(item);
-                        finfo->Release();
+                        //finfo->Release();
                         item->Release();
                         i--;
                         n--;

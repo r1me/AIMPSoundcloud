@@ -255,7 +255,7 @@ bool Config::ResolveTrackInfo(int64_t id) {
         }
     }, true);
 
-    if (access == L"playable") {
+    if ((access == L"playable") || (access == L"preview")) {
 
         AimpHTTP::Get(url_streams, [&](unsigned char* data, int size) {
             rapidjson::Document d;

@@ -73,6 +73,7 @@ private:
 
     static bool m_initialized;
     static IAIMPServiceHTTPClient *m_httpClient;
+    static IAIMPServiceHTTPClient2 *m_httpClient2;
 
     static std::set<EventListener *> m_handlers;
 };

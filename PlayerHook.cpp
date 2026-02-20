@@ -5,6 +5,9 @@
 #include "Config.h"
 
 HRESULT WINAPI PlayerHook::OnCheckURL(IAIMPString *URL, BOOL *Handled) {
+    if (!Plugin::instance()->isConnected())
+        return E_FAIL;
+
     if (wcsstr(URL->GetData(), L"soundcloud://") == 0 && wcsstr(URL->GetData(), L"soundcloud.com") == 0)
         return E_FAIL;
 

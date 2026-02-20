@@ -125,6 +125,8 @@ void WINAPI OptionsDialog::Notification(int ID) {
             m_userLogin = Config::GetString(L"UserLogin");
             m_userInfo  = Config::GetString(L"UserInfo");
             m_plugin->setAccessToken(Config::GetString(L"AccessToken"));
+            m_plugin->setRefreshToken(Config::GetString(L"RefreshToken"));
+            m_plugin->setTokenExpiresIn(Config::GetInt64(L"TokenExpiresIn"));
 
             SendDlgItemMessage(m_handle, IDC_ADDDURATION, BM_SETCHECK, Config::GetInt32(L"AddDurationToTitle", 0), 0);
             SendDlgItemMessage(m_handle, IDC_ADDARTIST, BM_SETCHECK, Config::GetInt32(L"AddUsernameToTitle", 0), 0);
@@ -156,6 +158,8 @@ void WINAPI OptionsDialog::Notification(int ID) {
             Config::SetString(L"UserInfo", m_userInfo);
 
             Config::SetString(L"AccessToken", m_plugin->getAccessToken());
+            Config::SetString(L"RefreshToken", m_plugin->getRefreshToken());
+            Config::SetInt64(L"TokenExpiresIn", m_plugin->getTokenExpiresIn());
 
             Config::SetInt32(L"LimitUserStreamValue", SendDlgItemMessage(m_handle, IDC_LIMITSTREAMVALUESPIN, UDM_GETPOS32, 0, 0));
             Config::SetInt32(L"CheckEveryHours", SendDlgItemMessage(m_handle, IDC_CHECKEVERYVALUESPIN, UDM_GETPOS32, 0, 0));
@@ -691,6 +695,7 @@ BOOL CALLBACK OptionsDialog::DlgProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM 
                         });
                     } else {
                         plugin->setAccessToken(L"");
+                        plugin->setRefreshToken(L"");
                         dialog->m_userName.clear();
                         dialog->m_userInfo.clear();
                         dialog->m_userId = 0;
@@ -780,9 +785,15 @@ void OptionsDialog::Connect(std::function<void()> onFinished) {
                 rapidjson::Document d;
                 d.Parse(reinterpret_cast<const char *>(data));
 
-                if (d.HasMember("access_token")) {
+                if ((d.HasMember("access_token")) && (d.HasMember("refresh_token"))) {
                     Plugin::instance()->setAccessToken(Tools::ToWString(d["access_token"].GetString()));
+                    Plugin::instance()->setRefreshToken(Tools::ToWString(d["refresh_token"].GetString()));
+                    Plugin::instance()->setTokenExpiresInDuration(d["expires_in"].GetInt64());
+
                     Config::SetString(L"AccessToken", Plugin::instance()->getAccessToken());
+                    Config::SetString(L"RefreshToken", Plugin::instance()->getRefreshToken());
+                    Config::SetInt64(L"TokenExpiresIn", Plugin::instance()->getTokenExpiresIn());
+
                     if (onFinished)
                         onFinished();
                 }
