@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iomanip>
 #include <codecvt>
+#include <string>
 
 static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> wStrConverter;
 
@@ -53,7 +54,7 @@ std::wstring Tools::UrlEncode(const std::wstring &url) {
             escaped << c;
             continue;
         }
-        escaped << '%' << std::setw(2) << int((unsigned char)c);
+        escaped << '%' << std::setw(2) << std::uppercase << int((unsigned char)c);
     }
 
     return escaped.str();
@@ -78,11 +79,22 @@ int64_t Tools::TrackIdFromUrl(const std::wstring &url) {
     return 0;
 }
 Config::TrackInfo *Tools::TrackInfo(int64_t id) {
+    std::wstring suffix = L"/preview";
+    std::wstring path = L"";
+
     if (id > 0) {
         if (Config::TrackInfos.find(id) == Config::TrackInfos.end()) {
             if (!Config::ResolveTrackInfo(id))
                 return nullptr;
         }
+        path = Config::TrackInfos[id].Stream;
+
+        if (path.length() >= suffix.length() &&
+            path.compare(path.length() - suffix.length(), suffix.length(), suffix) == 0)
+        {
+            Config::ResolveTrackInfo(id);
+        }
+
         return &Config::TrackInfos[id];
     }
     return nullptr;

@@ -279,8 +279,10 @@ void SoundCloudAPI::ResolveUrl(const std::wstring &url, const std::wstring &play
         }
     }
 
-    if (Plugin::instance()->isConnected())
+    if (Plugin::instance()->isConnected()) {
+        finalUrl += L"\u000D\u000A" L"accept: */*";
         finalUrl += L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
+    }
 
     AimpHTTP::Get(finalUrl, [createPlaylist, url, playlistTitle, refName2](unsigned char *data, int size) {
         rapidjson::Document d;
@@ -392,7 +394,7 @@ void SoundCloudAPI::ResolveUrl(const std::wstring &url, const std::wstring &play
             MessageBox(Plugin::instance()->GetMainWindowHandle(), Plugin::instance()->Lang(L"SoundCloud.Messages\\CantResolve").c_str(), Plugin::instance()->Lang(L"SoundCloud.Messages\\Error").c_str(), MB_OK | MB_ICONERROR);
             return;
         }
-    });
+    }, true);
 }
 
 void SoundCloudAPI::LoadMyTracksAndPlaylists() {
@@ -440,22 +442,22 @@ void SoundCloudAPI::LoadMyTracksAndPlaylists() {
 }
 
 void SoundCloudAPI::LikeSong(int64_t trackId) {
-    std::wstring url(L"https://api.soundcloud.com/me/favorites/");
+    std::wstring url(L"https://api.soundcloud.com/likes/tracks/");
     url += std::to_wstring(trackId);
-    url += L"?client_id=" TEXT(CLIENT_ID)
-           L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
+    url += L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 
-    AimpHTTP::Put(url);
+    std::string postData = "";
+    AimpHTTP::Post(url, postData, [&](unsigned char* data, int size) {}, true);
+
     Config::Likes.insert(trackId);
 }
 
 void SoundCloudAPI::UnlikeSong(int64_t trackId) {
-    std::wstring url(L"https://api.soundcloud.com/me/favorites/");
+    std::wstring url(L"https://api.soundcloud.com/likes/tracks/");
     url += std::to_wstring(trackId);
-    url += L"?client_id=" TEXT(CLIENT_ID)
-           L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
+    url += L"\u000D\u000A" L"Authorization: OAuth " + Plugin::instance()->getAccessToken();
 
-    AimpHTTP::Delete(url);
+    AimpHTTP::Delete(url, [&](unsigned char* data, int size) {});
     Config::Likes.erase(trackId);
 
     if (IAIMPPlaylist *likes = Plugin::instance()->GetPlaylist(Plugin::instance()->Lang(L"SoundCloud\\Likes", 0), false, false)) {
