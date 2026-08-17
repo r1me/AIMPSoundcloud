@@ -226,6 +226,7 @@ bool Config::ResolveTrackInfo(int64_t id) {
     std::wstring title(L"Unknown"), permalink, waveform_id, artwork;
     double duration = -1;
     std::wstring stream_url(L"https://api.soundcloud.com/tracks/" + std::to_wstring(id) + L"/stream");
+    std::wstring stream_type(L".mp3");
 
     AimpHTTP::Get(url, [&](unsigned char *data, int size) {
         rapidjson::Document d;
@@ -261,10 +262,20 @@ bool Config::ResolveTrackInfo(int64_t id) {
             rapidjson::Document d;
             d.Parse(reinterpret_cast<const char*>(data));
 
-            if (d.IsObject() && d.HasMember("http_mp3_128_url"))
+            //if (d.IsObject() && d.HasMember("hls_aac_160_url")) {
+            //    stream_url = Tools::ToWString(d["hls_aac_160_url"]);
+            //    stream_type = L".aac";
+            //}
+            if (d.IsObject() && d.HasMember("hls_mp3_128_url")) {
+                stream_url = Tools::ToWString(d["hls_mp3_128_url"]);
+                stream_type = L".mp3";
+            }
+            else if (d.IsObject() && d.HasMember("http_mp3_128_url")) {
                 stream_url = Tools::ToWString(d["http_mp3_128_url"]);
+                stream_type = L".mp3";
+            }
 
-            Config::TrackInfos[id] = Config::TrackInfo(id, title, stream_url, permalink, waveform_id, artwork, duration);
+            Config::TrackInfos[id] = Config::TrackInfo(id, title, stream_url, stream_type, permalink, waveform_id, artwork, duration);
 
             Config::SaveCache();
             }, true);

@@ -62,6 +62,7 @@ public:
         int64_t Id;
         std::wstring Name;
         std::wstring Stream;
+        std::wstring StreamType;
         std::wstring Permalink;
         std::wstring Waveform_ID;
         std::wstring Artwork;
@@ -71,8 +72,8 @@ public:
         typedef rapidjson::GenericValue<rapidjson::UTF16<>> Value;
 
         TrackInfo(): Duration(0) { }
-        TrackInfo(int64_t id, const std::wstring &name, const std::wstring &stream, const std::wstring &permalink, const std::wstring &waveform, const std::wstring &artwork, double duration)
-            : Id(id), Name(name), Stream(stream), Permalink(permalink), Waveform_ID(waveform), Artwork(artwork), Duration(duration) {
+        TrackInfo(int64_t id, const std::wstring &name, const std::wstring &stream, const std::wstring& streamType, const std::wstring &permalink, const std::wstring &waveform, const std::wstring &artwork, double duration)
+            : Id(id), Name(name), Stream(stream), StreamType(streamType), Permalink(permalink), Waveform_ID(waveform), Artwork(artwork), Duration(duration) {
 
         }
 
@@ -80,6 +81,7 @@ public:
             if (v.IsObject()) {
                 Name        = v[L"N"].GetString();
                 Stream      = v[L"S"].GetString();
+                StreamType  = v[L"T"].GetString();
                 Permalink   = v[L"P"].GetString();
                 Waveform_ID = v[L"W"].GetString();
                 Artwork     = v[L"A"].GetString();
@@ -95,6 +97,9 @@ public:
             
             writer.String(L"S");
             writer.String(that.Stream.c_str(), that.Stream.size());
+
+            writer.String(L"T");
+            writer.String(that.StreamType.c_str(), that.StreamType.size());
             
             writer.String(L"P");
             writer.String(that.Permalink.c_str(), that.Permalink.size());

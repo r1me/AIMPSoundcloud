@@ -72,9 +72,10 @@ void SoundCloudAPI::AddFromJson(IAIMPPlaylist *playlist, const rapidjson::Value 
                 stream_url = L"https://api.soundcloud.com/tracks/" + std::to_wstring(trackId) + L"/stream";
 
             std::wstring filename(L"soundcloud://");
+            std::wstring stream_type(L".mp3");
             filename += std::to_wstring(trackId) + L"/";
             filename += Tools::ToWString(item["title"]);
-            filename += L".mp3";
+            filename += stream_type;
             file_info->SetValueAsObject(AIMP_FILEINFO_PROPID_FILENAME, AIMPString(filename));
 
             if (!state->ReferenceName.empty()) {
@@ -100,7 +101,7 @@ void SoundCloudAPI::AddFromJson(IAIMPPlaylist *playlist, const rapidjson::Value 
 
             auto artwork = Tools::ToWString(item["artwork_url"]);
 
-            Config::TrackInfos[trackId] = Config::TrackInfo(trackId, Tools::ToWString(item["title"]), stream_url, Tools::ToWString(item["permalink_url"]), waveform_id, artwork, item["duration"].GetInt64() / 1000.0);
+            Config::TrackInfos[trackId] = Config::TrackInfo(trackId, Tools::ToWString(item["title"]), stream_url, stream_type, Tools::ToWString(item["permalink_url"]), waveform_id, artwork, item["duration"].GetInt64() / 1000.0);
 
             if (Config::GetInt32(L"AddDurationToTitle", 0)) {
                 double duration = item["duration"].GetInt64() / 1000.0;
