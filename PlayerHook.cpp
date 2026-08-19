@@ -25,3 +25,18 @@ HRESULT WINAPI PlayerHook::OnCheckURL(IAIMPString *URL, BOOL *Handled) {
     *Handled = 1;
     return S_OK;
 }
+
+HRESULT __stdcall WaveformProviderHook::Calculate(IAIMPString* FileURI, IAIMPTaskOwner* TaskOwner, PAIMPWaveformPeakInfo Peaks, INT32 PeakCount)
+{
+    if (!Plugin::instance()->isConnected())
+        return E_FAIL;
+
+    if (wcsstr(FileURI->GetData(), L"soundcloud://") == 0 && wcsstr(FileURI->GetData(), L"soundcloud.com") == 0)
+        return E_FAIL;
+
+    int64_t id = Tools::TrackIdFromUrl(FileURI->GetData());
+    if (auto ti = Tools::TrackInfo(id)) {
+    }
+
+    return E_FAIL;
+}

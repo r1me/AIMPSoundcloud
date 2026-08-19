@@ -228,6 +228,10 @@ HRESULT WINAPI Plugin::Initialize(IAIMPCore *Core) {
         Finalize();
         return E_FAIL;
     }
+    if (FAILED(m_core->RegisterExtension(IID_IAIMPServiceWaveform, new WaveformProviderHook()))) {
+        Finalize();
+        return E_FAIL;
+    }
     if (FAILED(m_core->RegisterExtension(IID_IAIMPServiceAlbumArt, new ArtworkProvider()))) {
         Finalize();
         return E_FAIL;
